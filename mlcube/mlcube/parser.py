@@ -76,6 +76,11 @@ class DeviceSpecs:
         gpus: t.Optional[str] = None
         cuda_visible_devices: t.Optional[str] = None
 
+    @dataclass
+    class SingularitySpecs:
+        nvidia_visible_devices: t.Optional[str] = ""
+        flags: t.Optional[tuple[str]] = tuple()
+
     def __init__(self) -> None:
         """Init GPU specs so that it's none by default.
 
@@ -161,6 +166,21 @@ class DeviceSpecs:
         return DeviceSpecs.DockerSpecs(
             gpus="device=" + ",".join(dev.str_spec() for dev in self._devices),
             cuda_visible_devices=",".join(str(i) for i in range(len(self._devices)))
+        )
+
+    def get_singularity_specs(self) -> "DeviceSpecs.SingularitySpecs":
+        if self.none:
+            return DeviceSpecs.SingularitySpecs()
+        if self.all:
+            return DeviceSpecs.SingularitySpecs(flags=("--nv",))
+        if self.num_devices is not None:
+            raise ConfigurationError(
+                "Setting a GPU count is not supported when using singularity. Specify GPU IDs instead."
+            )
+        assert isinstance(self._devices, list) and len(self._devices) > 0
+        return DeviceSpecs.SingularitySpecs(
+            nvidia_visible_devices=",".join(dev.str_spec() for dev in self._devices),
+            flags=("--nv", "--nvccli")
         )
 
     @classmethod
@@ -341,10 +361,8 @@ class CliParser(object):
                 key = "--security-opt" if platform == "docker" else "--security"
                 runner_run_args[key] = parsed_args["security"]
             if parsed_args.get("gpus", None) is not None:
-                if platform == "docker":
-                    runner_run_args["--gpus"] = parsed_args["gpus"].strip()
-                else:
-                    runner_run_args["--nv"] = ""
+                key = "--gpus" if platform == "docker" else "--nv"
+                runner_run_args[key] = parsed_args["gpus"].strip()
             if parsed_args.get("memory", None):
                 key = "--memory" if platform == "docker" else "--vm-ram"
                 runner_run_args[key] = parsed_args["memory"]

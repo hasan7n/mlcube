@@ -1,6 +1,7 @@
 import logging
 import typing as t
 from pathlib import Path
+import os
 
 from mlcube_singularity.singularity_client import Client, DockerHubClient
 from omegaconf import DictConfig, OmegaConf
@@ -9,6 +10,7 @@ from mlcube.errors import ConfigurationError, ExecutionError, MLCubeError
 from mlcube.runner import Runner, RunnerConfig
 from mlcube.shell import Shell
 from mlcube.validate import Validate
+from mlcube.parser import DeviceSpecs
 
 __all__ = ["Config", "SingularityRun"]
 
@@ -192,8 +194,8 @@ class SingularityRun(Runner):
     def _get_extra_args(self) -> str:
         """Temporary solution to take into account run arguments provided by users."""
         # Collect all parameters that start with '--' and have a non-None value.
-        flags = {"--nv"}             # These do not require value.
-        ignored = {"--mount_opts"}   # Ignore these arguments.
+        flags = set()             # These do not require value.
+        ignored = {"--mount_opts", "--nv"}   # Ignore these arguments.
 
         extra_args: t.List[str] = []
         for key, value in self.mlcube.runner.items():
@@ -205,6 +207,24 @@ class SingularityRun(Runner):
         extra_args_as_str = " ".join(extra_args)
         logger.debug("SingularityRun._get_extra_args extra_args='%s'.", extra_args_as_str)
         return extra_args_as_str
+
+    def _get_gpu_args(self):
+        device_specs = DeviceSpecs.from_config(
+            accelerator_count=self.mlcube.get("platform", {}).get("accelerator_count", None),
+            gpus=self.mlcube.runner.get("--nv", None)
+        )
+        if device_specs.none:
+            return ""
+
+        singularity_specs = device_specs.get_singularity_specs()
+        if "--nvccli" in singularity_specs.flags and not self.client.supports_nvccli():
+            raise ConfigurationError(
+                "This version of singularity does not support choosing what gpus "
+                "to include. Use `--gpus=all` to be able to use gpus."
+            )
+
+        os.environ["NVIDIA_VISIBLE_DEVICES"] = singularity_specs.nvidia_visible_devices
+        return " ".join(singularity_specs.flags)
 
     def __init__(
         self, mlcube: t.Union[DictConfig, t.Dict], task: t.Optional[str]
@@ -276,6 +296,10 @@ class SingularityRun(Runner):
         extra_args = self._get_extra_args()
         if extra_args:
             run_args += " " + extra_args
+
+        gpu_args = self._get_gpu_args()
+        if gpu_args:
+            run_args += " " + gpu_args
 
         entrypoint: t.Optional[str] = self.mlcube.tasks[self.task].get(
             "entrypoint", None

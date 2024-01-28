@@ -284,6 +284,16 @@ class Client:
         apptainer = self.version.runtime == Runtime.APPTAINER
         return singularity_35 or apptainer
 
+    def supports_nvccli(self) -> bool:
+        # TODO: later check apptainer
+        # TODO: later perhaps also check if nvidia-container-cli is installed
+        singularity_310 = (
+            self.version.runtime == Runtime.SINGULARITY
+            and self.version.version >= semver.VersionInfo(major=3, minor=10)
+        )
+
+        return singularity_310
+
     def __init__(
         self, singularity: t.Union[str, t.List], version: t.Optional[Version] = None
     ) -> None:
