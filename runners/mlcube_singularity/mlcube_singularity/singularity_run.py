@@ -160,8 +160,14 @@ class Config(RunnerConfig):
         build_file = "docker://" + d_cfg["image"]
         if "tar_file" in d_cfg:
             build_file = "docker-archive:" + d_cfg["tar_file"]
+
+        # Don't override the image name if set by the user
+        if "image" not in s_cfg:
+            s_cfg.update(
+                image="".join(c for c in d_cfg["image"] if c.isalnum()) + ".sif",
+            )
+
         s_cfg.update(
-            image="".join(c for c in d_cfg["image"] if c.isalnum()) + ".sif",
             build_file=build_file,
             **extra_args
         )
