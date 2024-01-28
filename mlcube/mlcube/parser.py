@@ -376,6 +376,7 @@ class CliParser(object):
         cpu_option: CPU options defined during MLCube container execution.
         mount_option: Mount options for paths.
         """
+        # NOTE: this function is not used
         mlcube_args, opts = {}, {}
 
         opts["--mount_opts"] = mount_option

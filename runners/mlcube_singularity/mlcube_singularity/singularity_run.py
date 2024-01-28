@@ -199,6 +199,8 @@ class SingularityRun(Runner):
         for key, value in self.mlcube.runner.items():
             if key.startswith("--") and value is not None and key not in ignored:
                 extra_args.append(key if key in flags else f"{key}={value}")
+                if key == "--network":
+                    extra_args.append("-n")
 
         extra_args_as_str = " ".join(extra_args)
         logger.debug("SingularityRun._get_extra_args extra_args='%s'.", extra_args_as_str)
