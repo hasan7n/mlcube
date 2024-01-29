@@ -180,7 +180,7 @@ class DeviceSpecs:
         assert isinstance(self._devices, list) and len(self._devices) > 0
         return DeviceSpecs.SingularitySpecs(
             nvidia_visible_devices=",".join(dev.str_spec() for dev in self._devices),
-            flags=("--nv", "--nvccli", "-c")
+            flags=("--nv", "--nvccli", "-c", "--writable-tmpfs")
         )
 
     @classmethod
