@@ -4,15 +4,16 @@
 - `ParameterType`: Type of MLCube task parameter.
 - `MLCubeConfig`: Utilities to assemble effective MLCube configuration.
 """
-import logging
 import os
 import typing as t
 
 from omegaconf import DictConfig, OmegaConf
 
 from mlcube.runner import Runner
+from mlcube.errors import ConfigurationError
+from mlcube.logging import setup_file_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 __all__ = ["IOType", "ParameterType", "MountType", "MLCubeConfig"]
 
@@ -178,12 +179,15 @@ class MLCubeConfig(object):
             try:
                 runner_cls.CONFIG.validate(mlcube_config)
             except Exception as err:
-                logger.error(
-                    "MLCubeConfig.create_mlcube_config failed to validate MLCube config (%s): %s.",
+                msg = (
+                    "MLCubeConfig.create_mlcube_config failed to validate MLCube config"
+                    " ({}): {}."
+                ).format(
                     OmegaConf.to_container(mlcube_config, resolve=False),
                     str(err),
                 )
-                raise
+
+                raise ConfigurationError(msg)
 
         for task_name in mlcube_config.tasks.keys():
             [task] = MLCubeConfig.ensure_values_exist(
@@ -225,7 +229,7 @@ class MLCubeConfig(object):
             k for k in default_runner_config.keys() if k not in mlcube_config["runner"]
         ]
         if params_to_merge:
-            logger.warning(
+            logger.debug(
                 "Default runner config contains parameters that are not present in the effective runner config "
                 "(params=%s). This probably means that a new version of a runner was installed that introduced "
                 "new parameters.",

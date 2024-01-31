@@ -1,6 +1,5 @@
 import base64
 import json
-import logging
 import os
 import platform
 import typing as t
@@ -14,6 +13,7 @@ import semver
 from mlcube.errors import ExecutionError, MLCubeError
 from mlcube.shell import Shell
 from mlcube.system_settings import SystemSettings
+from mlcube.logging import setup_file_logger
 
 __all__ = [
     "DockerImage",
@@ -25,7 +25,7 @@ __all__ = [
     "parse_key_value_string",
 ]
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class DockerImage:
@@ -245,7 +245,7 @@ class Client:
             executables = [
                 system_settings.platforms["singularity"]["singularity"]
             ] + executables
-            logger.info(
+            logger.debug(
                 "Client.from_env found singularity platform config in MLCube system settings file "
                 "(file=%s, platform=%s). Will try it first for detecting singularity CLI client.",
                 system_settings.path.as_posix(),
@@ -260,7 +260,7 @@ class Client:
         for executable in executables:
             try:
                 client = Client(executable)
-                logger.info(
+                logger.debug(
                     "Client.from_env found singularity (exec=%s, version=%s)",
                     client.singularity,
                     client.version,
@@ -340,7 +340,7 @@ class Client:
         # Get full path to a singularity image. By design, we compute it relative to {mlcube.root}/workspace.
         image_file = Path(image_dir, image_name)
         if image_file.exists():
-            logger.info(
+            logger.debug(
                 "Client.build won't build SIF image (file exists: %s).",
                 image_file,
             )
@@ -355,7 +355,7 @@ class Client:
         if recipe.startswith("docker://") or recipe.startswith("docker-archive:"):
             # https://sylabs.io/guides/3.0/user-guide/build_a_container.html
             # URI beginning with docker:// to build from Docker Hub
-            logger.info(
+            logger.debug(
                 "Client.build will build SIF image from docker image (image=%s).",
                 recipe,
             )
@@ -365,7 +365,7 @@ class Client:
                 raise IOError(
                     f"SIF recipe file does not exist (path={build_dir}, file={recipe})"
                 )
-            logger.info(
+            logger.debug(
                 "Client.build will build SIF image from recipe file (path=%s, file=%s).",
                 build_dir,
                 recipe,
@@ -605,7 +605,7 @@ def _get_authentication_token(www_authenticate: t.Optional[str], auth_key: str) 
     if os.environ.get("SINGULARITY_DOCKER_USERNAME", None) and os.environ.get(
         "SINGULARITY_DOCKER_PASSWORD", None
     ):
-        logger.info(
+        logger.debug(
             "_get_authentication_token found docker username (SINGULARITY_DOCKER_USERNAME) and "
             "password (SINGULARITY_DOCKER_PASSWORD) environment variables."
         )
@@ -618,7 +618,7 @@ def _get_authentication_token(www_authenticate: t.Optional[str], auth_key: str) 
     else:
         auth_token: t.Optional[str] = _get_auth_token(auth_key)
         if auth_token:
-            logger.info("_get_authentication_token using auth token from config file.")
+            logger.debug("_get_authentication_token using auth token from config file.")
             loggable_url = f"https://***:***@{url}"
             url = base64.b64decode(auth_token).decode() + "@" + url
 
@@ -720,7 +720,7 @@ def _get_auth_token(auth_key: str) -> t.Optional[str]:
         def _get_auth(_config_file: Path, _key: str) -> t.Optional[str]:
             if _key in auths:
                 if isinstance(auths[_key], dict) and "auth" in auths[_key]:
-                    logger.info(
+                    logger.debug(
                         "%s contains auth token for %s", _config_file.as_posix(), _key
                     )
                     return auths[_key]["auth"]

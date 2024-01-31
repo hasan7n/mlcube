@@ -314,7 +314,7 @@ class Options:
         "--log-level",
         "--log_level",
         required=False,
-        default="warning",
+        default="info",
         type=click.Choice(["critical", "error", "warning", "info", "debug"]),
         help="Logging level is a lower-case string value for Python's logging library (see "
         "[Logging Levels]({log_level}) for more details). Only messages with this logging level or higher are "

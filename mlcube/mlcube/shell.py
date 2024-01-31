@@ -3,7 +3,6 @@
 - `Shell`: This class provides a collection of methods to work with shell to run external processes.
 """
 import copy
-import logging
 import os
 import shutil
 import subprocess
@@ -16,10 +15,11 @@ from omegaconf import DictConfig
 
 from mlcube.config import IOType, MountType, ParameterType
 from mlcube.errors import ConfigurationError, ExecutionError
+from mlcube.logging import setup_file_logger
 
 __all__ = ["Shell"]
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class Shell(object):
@@ -86,7 +86,8 @@ class Shell(object):
         status: int = os.system(cmd)
         exit_code, exit_status = Shell.parse_exec_status(status)
         if exit_status == "na":
-            logger.warning(
+            logger.warning("Shell command did not exit properly")
+            logger.debug(
                 "Shell.run command (cmd=%s) did not exit properly (status=%d).",
                 cmd,
                 status,
@@ -97,7 +98,7 @@ class Shell(object):
             f"on_error={on_error}"
         )
         if exit_code != 0:
-            logger.error(msg)
+            logger.debug(msg)
             if on_error == "die":
                 sys.exit(exit_code)
             if on_error == "raise":
@@ -108,7 +109,7 @@ class Shell(object):
                     cmd=cmd,
                 )
         else:
-            logger.info(msg)
+            logger.debug(msg)
         return exit_code
 
     @staticmethod
@@ -349,7 +350,7 @@ class Shell(object):
                         mount_type = MountType.RW
 
                     mounts_opts[_host_path] = mount_type
-                    logger.info(
+                    logger.debug(
                         "Host path (%s) for parameter '%s' will be mounted with '%s' option.",
                         _host_path,
                         _param_name,

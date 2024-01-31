@@ -5,7 +5,6 @@
 - `CliParser`: Helper utilities to parse command linea arguments.
 """
 import abc
-import logging
 import os
 import typing as t
 from dataclasses import dataclass
@@ -13,8 +12,9 @@ from dataclasses import dataclass
 from omegaconf import DictConfig, OmegaConf
 
 from mlcube.errors import ConfigurationError
+from mlcube.logging import setup_file_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class MLCubeInstance(abc.ABC):
@@ -123,11 +123,11 @@ class DeviceSpecs:
         if accelerator_count == 0:
             # The accelerator count value has been set to 0
             if self.none:
-                logger.info(
+                logger.debug(
                     "`platform.accelerator_count = 0` is consistent with device specs (%s).", str(self)
                 )
                 return
-            logger.warning(
+            logger.debug(
                 "`platform.accelerator_count = 0` is not consistent with device specs (%s).", str(self)
             )
         # Some number of accelerators has been specified
@@ -136,11 +136,11 @@ class DeviceSpecs:
                 self.num_devices is not None and self.num_devices == accelerator_count or
                 self._devices is not None and len(self._devices) == accelerator_count
         ):
-            logger.info(
+            logger.debug(
                 "`platform.accelerator_count = %d` is probably consistent with device specs (%s).",
                 accelerator_count, str(self)
             )
-        logger.warning(
+        logger.debug(
             "`platform.accelerator_count = %d` is not consistent with device specs (%s).",
             accelerator_count, str(self)
         )
@@ -151,7 +151,7 @@ class DeviceSpecs:
             return DeviceSpecs.DockerSpecs()
         if self.all:
             # provide --gpus=all, do not know yet how to compute total number of devices
-            logger.warning(
+            logger.debug(
                 "Device docker specs: identifying CUDA_VISIBLE_DEVICES when gpus = 'all' is not supported yet."
             )
             return DeviceSpecs.DockerSpecs(gpus="all")
@@ -264,7 +264,7 @@ class DeviceSpecs:
             device_specs = DeviceSpecs.from_string(gpus)
             device_specs.check_with_platform_specs(platform_device_specs.num_devices)
 
-        logger.info(
+        logger.debug(
             "Device params `platform.accelerator_count` (%s) and `--gpus` (%s) resolved to device specs (%s).",
             str(accelerator_count), str(gpus), str(device_specs)
         )

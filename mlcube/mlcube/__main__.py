@@ -15,8 +15,9 @@ from mlcube.errors import ExecutionError, IllegalParameterValueError, MLCubeErro
 from mlcube.parser import CliParser
 from mlcube.shell import Shell
 from mlcube.system_settings import SystemSettings
+from mlcube.logging import setup_file_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 _TERMINAL_WIDTH = shutil.get_terminal_size()[0]  # Since Python version 3.3
 """Width of a user terminal. MLCube overrides default (80) character width to make usage examples look better."""
@@ -38,7 +39,7 @@ def cli(log_level: t.Optional[str]):
         log_level = log_level.upper()
         logging.basicConfig(level=log_level)
         coloredlogs.install(level=log_level)
-        logging.info("cli setting log Level from CLI argument to '%s'.", log_level)
+        logging.debug("cli setting log Level from CLI argument to '%s'.", log_level)
     logger.debug("cli command=%s", sys.argv)
     _ = SystemSettings().update_installed_runners()
 
@@ -129,8 +130,7 @@ def configure(mlcube: t.Optional[str], platform: str, p: t.Tuple[str]) -> None:
     if mlcube is None:
         mlcube = os.getcwd()
     logger.info(
-        "Configuring MLCube (`%s`) for `%s` platform.",
-        os.path.abspath(mlcube),
+        "Configuring the MLCube for `%s` platform.",
         platform,
     )
     try:
@@ -143,13 +143,12 @@ def configure(mlcube: t.Optional[str], platform: str, p: t.Tuple[str]) -> None:
         runner.configure()
     except MLCubeError as err:
         exit_code = err.context.get("code", 1) if isinstance(err, ExecutionError) else 1
-        print(f"Failed to configure MLCube with error code {exit_code}.")
+        logger.error(str(err))
         if isinstance(err, ExecutionError):
-            logger.exception(err.describe())
+            logger.debug(err.describe())
         sys.exit(exit_code)
     logger.info(
-        "MLCube (%s) has been successfully configured for `%s` platform.",
-        os.path.abspath(mlcube),
+        "The MLCube has been successfully configured for `%s` platform.",
         platform,
     )
 
@@ -211,7 +210,7 @@ def run(
         p: Additional MLCube configuration parameters (these parameters are those parameters that normally start with
             `-P` prefix). Here, due to original implementation, we need to `unparse` by adding `-P` prefix.
     """
-    logger.info(
+    logger.debug(
         "run input_arg mlcube=%s, platform=%s, task=%s, workspace=%s, network=%s, security=%s, gpus=%s, "
         "memory=%s, mount=%s, cpu=%s, p=%s",
         mlcube,
@@ -272,14 +271,14 @@ def run(
     try:
         # TODO: Sergey - Can we have one instance for all tasks?
         for task in tasks:
-            logger.info("run task = %s", task)
+            logger.info("Running task = %s", task)
             runner = runner_cls(mlcube_config, task=task)
             runner.run()
     except MLCubeError as err:
         exit_code = err.context.get("code", 1) if isinstance(err, ExecutionError) else 1
-        print(f"run failed to run MLCube with error code {exit_code}.")
+        logger.error(str(err))
         if isinstance(err, ExecutionError):
-            logger.exception(err.describe())
+            logger.debug(err.describe())
         sys.exit(exit_code)
 
 
@@ -462,7 +461,8 @@ def config(
             remove_platforms: bool = "--remove-platforms" in ctx.args or "--remove_platforms" in ctx.args
             settings.remove_runner(remove_runner, remove_platforms=remove_platforms)
     except MLCubeError as e:
-        logger.error("Command failed, command = '%s' error = '%s'", " ".join(sys.argv), str(e))
+        logger.error("Command failed: %s", str(e))
+        logger.debug("Command failed, command = '%s' error = '%s'", " ".join(sys.argv), str(e))
 
 
 @cli.command(
@@ -561,8 +561,7 @@ def inspect(
 
             yaml.dump(info, output_stream)
     except MLCubeError as err:
-        print("MLCube inspect failed")
-        logger.exception(err)
+        logger.error(err)
         exit(1)
 
 

@@ -1,4 +1,3 @@
-import logging
 import typing as t
 import kfp
 import kfp.compiler as compiler
@@ -8,8 +7,9 @@ from omegaconf import (DictConfig, OmegaConf)
 from mlcube.errors import ExecutionError
 from mlcube.runner import (RunnerConfig, Runner)
 from mlcube.validate import Validate
+from mlcube.logging import setup_file_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class Config(RunnerConfig):

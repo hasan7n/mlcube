@@ -1,5 +1,4 @@
 import os
-import logging
 import typing as t
 from pathlib import Path
 from omegaconf import (DictConfig, OmegaConf)
@@ -10,9 +9,10 @@ from mlcube.runner import (RunnerConfig, Runner)
 from mlcube.errors import ExecutionError
 from mlcube_gcp.gcp_client.instance import Instance as GCPInstance, Status as GCPInstanceStatus
 from mlcube_gcp.gcp_client.service import Service
+from mlcube.logging import setup_file_logger
 
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class Config(RunnerConfig):

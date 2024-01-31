@@ -17,10 +17,11 @@ from mlcube.parser import CliParser, DeviceSpecs
 from mlcube.runner import Runner, RunnerConfig
 from mlcube.shell import Shell
 from mlcube.validate import Validate
+from mlcube.logging import setup_file_logger
 
 __all__ = ["Config", "DockerRun"]
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class Config(RunnerConfig):
@@ -152,7 +153,8 @@ class DockerRun(Runner):
         build_strategy: t.Text = self.mlcube.runner.build_strategy
         build_recipe_exists: bool = os.path.exists(recipe)
         if build_strategy == Config.BuildStrategy.PULL or not build_recipe_exists:
-            logger.info(
+            logger.info("Pulling container image.")
+            logger.debug(
                 "Will pull image (%s) because (build_strategy=%s, build_recipe_exists=%r)",
                 image,
                 build_strategy,
@@ -180,7 +182,8 @@ class DockerRun(Runner):
                 )
 
         else:
-            logger.info(
+            logger.info("Building the container image.")
+            logger.debug(
                 "Will build image (%s) because (build_strategy=%s, build_recipe_exists=%r)",
                 image,
                 build_strategy,
@@ -194,8 +197,12 @@ class DockerRun(Runner):
             except ExecutionError as err:
                 raise ExecutionError.mlcube_configure_error(
                     self.__class__.__name__,
-                    f"Error occurred while building docker image (docker={docker}, build_args={build_args}, "
-                    f"image={image}, recipe={recipe}, context={context}).",
+                    "Error occurred while building docker image.",
+                    docker=docker,
+                    build_args=build_args,
+                    image=image,
+                    recipe=recipe,
+                    context=context,
                     **err.context,
                 )
 
@@ -221,9 +228,7 @@ class DockerRun(Runner):
         except Exception as err:
             raise ExecutionError.mlcube_run_error(
                 self.__class__.__name__,
-                f"Error occurred while syncing MLCube workspace (task={self.task}). Actual error is {type(err)} - see "
-                "context for details.",
-                error=str(err),
+                f"Error occurred while syncing MLCube workspace (task={self.task}): {str(err)}",
                 worspace=self.mlcube.runtime.workspace,
                 mlcube=OmegaConf.to_container(self.mlcube),
                 task=self.task,
@@ -240,11 +245,10 @@ class DockerRun(Runner):
         except ConfigurationError as err:
             raise ExecutionError.mlcube_run_error(
                 self.__class__.__name__,
-                f"Error occurred while generating mount points for docker run command (task={self.task}). See context "
-                "for details and check your MLCube configuration file.",
-                error=str(err),
+                f"Error occurred while generating mount points for docker run command (task={self.task}): "
+                f"{str(err)}"
             )
-        logger.info(f"mounts={mounts}, task_args={task_args}")
+        logger.debug(f"mounts={mounts}, task_args={task_args}")
 
         volumes = Shell.to_cli_args(mounts, sep=":", parent_arg="--volume")
         env_args = self.mlcube.runner.env_args
@@ -277,7 +281,7 @@ class DockerRun(Runner):
             )
 
         if "entrypoint" in self.mlcube.tasks[self.task]:
-            logger.info(
+            logger.debug(
                 "Using custom task entrypoint: task=%s, entrypoint='%s'",
                 self.task,
                 self.mlcube.tasks[self.task].entrypoint,
@@ -295,7 +299,7 @@ class DockerRun(Runner):
                         shlex.split(self.mlcube.tasks[self.task].entrypoint)[1]
                     ).stem
                 ):
-                    logger.info(
+                    logger.debug(
                         "the mlcube --task does not match the stem of the entry point %s specified in mlcube.yaml",
                         Path(
                             shlex.split(self.mlcube.tasks[self.task].entrypoint)[1]
@@ -356,8 +360,13 @@ class DockerRun(Runner):
         except ExecutionError as err:
             raise ExecutionError.mlcube_run_error(
                 self.__class__.__name__,
-                f"Error occurred while running MLCube task (docker={docker}, run_args={run_args}, env_args={env_args}, "
-                f"volumes={volumes}, image={image}, task_args={task_args}).",
+                "Error occurred while running MLCube task.",
+                docker=docker,
+                run_args=run_args,
+                env_args=env_args,
+                volumes=volumes,
+                image=image,
+                task_args=task_args,
                 **err.context,
             )
 

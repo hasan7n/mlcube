@@ -1,4 +1,3 @@
-import logging
 import typing as t
 from pathlib import Path
 import os
@@ -11,10 +10,11 @@ from mlcube.runner import Runner, RunnerConfig
 from mlcube.shell import Shell
 from mlcube.validate import Validate
 from mlcube.parser import DeviceSpecs
+from mlcube.logging import setup_file_logger
 
 __all__ = ["Config", "SingularityRun"]
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class Config(RunnerConfig):
@@ -99,7 +99,7 @@ class Config(RunnerConfig):
             image_path = Path(image_dir) / s_cfg.image
             logger.debug("Config.merge sif_file=%s, exists=%r.", image_path.as_posix(), image_path.exists())
             if image_path.exists():
-                logger.info("Config.merge specified SIF file (%s) exists.", image_path.as_posix())
+                logger.debug("Config.merge specified SIF file (%s) exists.", image_path.as_posix())
                 mlcube.runner = OmegaConf.merge(mlcube.runner, s_cfg)
                 return
 
@@ -114,7 +114,7 @@ class Config(RunnerConfig):
         if recipe_ok:
             if "image" not in s_cfg:
                 s_cfg["image"] = "".join(c for c in recipe if c.isalnum()) + ".sif"
-            logger.info(
+            logger.debug(
                 "Config.merge will build SIF file (image=%s) from singularity recipe (build_file=%s).",
                 s_cfg["image"], recipe
             )
@@ -124,7 +124,7 @@ class Config(RunnerConfig):
         # Now, we can try to borrow config from `docker` section. This implementation may seem a bit weird, I keep
         # it consistent with previous implementation for now. If OK, will need to update `image`, `build_file`,
         # `build_args` and `singularity`. The latter two parameters are here for consistency with prev implementation.
-        logger.warning(
+        logger.debug(
             "Config.merge no SIF file has been identified and no valid recipe to build one has been found in "
             "singularity configuration section. Will try to see if can reuse docker configuration as recipe to "
             "build SIF (once build source like docker image is identified, I will determine the SIF full path that may"
@@ -148,7 +148,7 @@ class Config(RunnerConfig):
                 extra_args["singularity"] = " ".join(client.singularity)
             if "build_args" not in s_cfg:
                 if client.supports_fakeroot():
-                    logger.info(
+                    logger.debug(
                         "Config.merge [build_args] will use --fakeroot CLI switch (CLI client seems to be "
                         "supporting it)."
                     )
@@ -173,7 +173,7 @@ class Config(RunnerConfig):
             build_file=build_file,
             **extra_args
         )
-        logger.info(
+        logger.debug(
             f"Config.merge singularity runner has converted docker configuration to singularity (%s).",
             str(OmegaConf.to_container(s_cfg)),
         )
@@ -278,7 +278,7 @@ class SingularityRun(Runner):
             if mounts_opts:
                 for key, value in mounts_opts.items():
                     mounts[key] += f":{value}"
-            logger.info(
+            logger.debug(
                 f"SingularityRun.run mounts=%s, task_args=%s", mounts, task_args
             )
         except ConfigurationError as err:
@@ -305,7 +305,7 @@ class SingularityRun(Runner):
             "entrypoint", None
         )
         if entrypoint:
-            logger.info(
+            logger.debug(
                 "SingularityRun.run found custom task entrypoint: task=%s, entrypoint='%s'",
                 self.task,
                 self.mlcube.tasks[self.task].entrypoint,

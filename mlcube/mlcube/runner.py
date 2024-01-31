@@ -3,17 +3,17 @@
 - `RunnerConfig`: Base class to manage runners' configurations.
 - `Runner`: Base class for all Python-based reference MLCube runners.
 """
-import logging
 import typing as t
 
 from omegaconf import DictConfig, OmegaConf
 
 from mlcube.errors import ConfigurationError, MLCubeError
+from mlcube.logging import setup_file_logger
 
 __all__ = ["RunnerConfig", "Runner"]
 
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class RunnerConfig(object):

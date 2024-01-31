@@ -3,7 +3,6 @@
 - `Platform`: Class to manage reference Python-based MLCube runners.
 """
 import importlib
-import logging
 import pkgutil
 import typing as t
 from types import ModuleType
@@ -11,8 +10,9 @@ from types import ModuleType
 from omegaconf import DictConfig
 
 from mlcube.runner import Runner
+from mlcube.logging import setup_file_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 __all__ = ["Platform"]
 
@@ -65,7 +65,7 @@ class Platform(object):
                     "config": {"pkg": pkg_name},
                     "runner_cls": runner_cls,
                 }
-                logger.info(
+                logger.debug(
                     "Platform.get_installed_runners found installed MLCube runner (platform=%s, pkg=%s, info=%s)",
                     runner_name,
                     pkg_name,

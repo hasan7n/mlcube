@@ -42,10 +42,11 @@ from mlcube.platform import Platform
 from mlcube.runner import Runner
 
 from omegaconf import (DictConfig, OmegaConf)
+from mlcube.logging import setup_file_logger
 
 __all__ = ['SystemSettings']
 
-logger = logging.getLogger(__name__)
+logger = setup_file_logger(__name__)
 
 
 class SystemSettings(object):
@@ -64,12 +65,12 @@ class SystemSettings(object):
         """
         self.path: Path = Path(path if path is not None else SystemSettings.system_settings_file()).resolve()
         if not self.path.exists():
-            logger.info(
+            logger.debug(
                 "SystemSettings.__init__ MLCube system settings file does not exist (%s).", self.path.as_posix()
             )
             self.path.touch()
         else:
-            logger.info("SystemSettings.__init__ MLCube system settings file exists (%s)", self.path.as_posix())
+            logger.debug("SystemSettings.__init__ MLCube system settings file exists (%s)", self.path.as_posix())
         self.settings: DictConfig = OmegaConf.load(self.path)
         if not isinstance(self.settings, DictConfig):
             raise ValueError(f"Invalid object read from {self.path} (type = {type(self.settings)}). "
