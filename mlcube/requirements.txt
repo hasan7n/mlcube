@@ -1,5 +1,5 @@
 click>=8.0.0,<9.0.0
 coloredlogs==14.0
 cookiecutter==2.1.1
-omegaconf==2.1.0
+omegaconf==2.1.1
 markdown
