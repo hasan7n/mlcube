@@ -238,8 +238,7 @@ class Client:
     @classmethod
     def from_env(cls) -> "Client":
         # Check if system settings file contains information about singularity.
-        executables = ["singularity", "sudo singularity", "apptainer", "sudo apptainer"]
-
+        executables = ["singularity", "apptainer"]
         system_settings = SystemSettings()
         if "singularity" in system_settings.platforms:
             executables = [
