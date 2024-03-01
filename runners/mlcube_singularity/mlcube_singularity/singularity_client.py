@@ -290,11 +290,12 @@ class Client:
             self.version.runtime == Runtime.SINGULARITY
             and self.version.version >= semver.VersionInfo(major=3, minor=10)
         )
+        apptainer = self.version.runtime == Runtime.APPTAINER
         # This function will be run when there is a necessity to use --nvccli (i.e. when
         # the user wishes to isolate certain GPUs). So maybe it's valuable to print a warning
         # to show the user the limitations of nvccli:
         # https://docs.sylabs.io/guides/3.10/user-guide/gpu.html#requirements-limitations
-        return singularity_310
+        return singularity_310 or apptainer
 
     def __init__(
         self, singularity: t.Union[str, t.List], version: t.Optional[Version] = None
