@@ -412,7 +412,8 @@ class Client:
         except ExecutionError as err:
             raise ExecutionError.mlcube_run_error(
                 self.__class__.__name__,
-                f"Error occurred while running MLCube task. See context for more details.",
+                "Error occurred while running MLCube task. See context for more details.",
+                informative=False,
                 **err.context,
             )
 

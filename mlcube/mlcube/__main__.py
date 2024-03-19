@@ -276,7 +276,12 @@ def run(
             runner.run()
     except MLCubeError as err:
         exit_code = err.context.get("code", 1) if isinstance(err, ExecutionError) else 1
-        logger.error(str(err))
+        # TODO: make below cleaner
+        informative = err.context.get("informative", True) if isinstance(err, ExecutionError) else True
+        if informative:
+            logger.error(str(err))
+        else:
+            logger.debug(str(err))
         if isinstance(err, ExecutionError):
             logger.debug(err.describe())
         sys.exit(exit_code)

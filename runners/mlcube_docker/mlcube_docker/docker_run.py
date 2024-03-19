@@ -367,6 +367,7 @@ class DockerRun(Runner):
                 volumes=volumes,
                 image=image,
                 task_args=task_args,
+                informative=False,
                 **err.context,
             )
 
