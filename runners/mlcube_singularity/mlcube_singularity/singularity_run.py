@@ -26,7 +26,7 @@ class Config(RunnerConfig):
             "image": "${singularity.image}",  # Path to Singularity image, relative to ${image_dir}.
             "image_dir": "${runtime.workspace}/.image",  # Root image directory for the image.
             "singularity": "singularity",  # Executable file for singularity runtime.
-            "build_args": "--fakeroot",  # Image build arguments.
+            "build_args": "",  # Image build arguments.
             "run_args": "",  # Container run arguments, example: -C --net.
             # Sergey: there seems to be a better name for this parameter. Originally, the only source was a singularity
             # recipe (build file). Later, MLCube started to support other sources, such as docker images.
@@ -141,23 +141,10 @@ class Config(RunnerConfig):
 
         # The idea is that we can use the remote docker image as a source for the build process, automatically
         # generating an image name in a local environment. Key here is that the source has a scheme - `docker://`
-        # The --fakeroot switch is useful and is supported in singularity version >= 3.5
         extra_args = {}
         if client is not None:
             if "singularity" not in s_cfg:
                 extra_args["singularity"] = " ".join(client.singularity)
-            if "build_args" not in s_cfg:
-                if client.supports_fakeroot():
-                    logger.debug(
-                        "Config.merge [build_args] will use --fakeroot CLI switch (CLI client seems to be "
-                        "supporting it)."
-                    )
-                    extra_args["build_args"] = "--fakeroot"
-                else:
-                    logger.warning(
-                        "Config.merge [build_args] will not use --fakeroot CLI switch (CLI client too old or "
-                        "version unknown)"
-                    )
 
         build_file = "docker://" + d_cfg["image"]
         if "tar_file" in d_cfg:
