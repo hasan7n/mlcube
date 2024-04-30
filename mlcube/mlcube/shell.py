@@ -377,7 +377,7 @@ class Shell(object):
             parent_arg: If not None, a parent parameter name for each arg in args, e.g. --build-arg
         """
         parent_arg = "" if not parent_arg else parent_arg + " "
-        return " ".join(f"{parent_arg}{k}{sep}{v}" for k, v in args.items())
+        return " ".join(f"{parent_arg}'{k}{sep}{v}'" for k, v in args.items())
 
     @staticmethod
     def sync_workspace(target_mlcube: DictConfig, task: str) -> None:
